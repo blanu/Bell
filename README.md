@@ -13,7 +13,7 @@ It is designed to be a programming language for non-programmers and to run on ha
 
 ## Acknowledgements
 
-The biggest inspiration for Bell is the book Smalltalk-80: The Language and Its Implementation by Adele Goldberg and David Robson.
-Steven Hazel has been my copilot on countless delves into the fundamental philosophical essence of computation for decades.
-Many thanks to my friend Will Cook for numerous inspirational discussions, particularly on the fundamental nature of objects.
+- The biggest inspiration for Bell is the book Smalltalk-80: The Language and Its Implementation by Adele Goldberg and David Robson.
+- Steven Hazel has been my copilot on countless delves into the fundamental philosophical essence of computation for decades.
+- Many thanks to my friend Will Cook for numerous inspirational discussions, particularly on the fundamental nature of objects.
 
