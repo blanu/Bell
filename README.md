@@ -1,6 +1,6 @@
 # Black Light Unicorn
 
-[Black Light Unicorn](https://blog.blacklightunicorn.com)) makes adventurous audio electronics and accompanying software.
+[Black Light Unicorn](https://blog.blacklightunicorn.com) makes adventurous audio electronics and accompanying software.
 
 ## Bell
 
