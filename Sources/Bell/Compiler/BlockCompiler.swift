@@ -55,14 +55,20 @@ extension BellCompiler
 
     public func generateOnlyChains(_ instanceName: String, _ chains: [Chain]) -> String
     {
-        return "    \(instanceName)Universe." + chains.map { self.generateChain(instanceName, $0) }.joined(separator: ".") + ";\n"
+        if instanceName == "this"
+        {
+            return "    \(chains.map { self.generateChain(instanceName, $0) }.joined(separator: "."));\n"
+        }
+        else
+        {
+            return "    \(instanceName)->\(chains.map { self.generateChain(instanceName, $0) }.joined(separator: "."));\n"
+        }
     }
 
     public func generateChain(_ instanceName: String, _ chain: Chain) -> String
     {
         return chain.phrases.map { self.generatePhrase(instanceName, $0) }.joined(separator: "\n")
     }
-
 
     public func generatePhrase(_ phrase: Phrase) -> String
     {
@@ -87,7 +93,14 @@ extension BellCompiler
 
     public func generatePhrase(_ instanceName: String, _ phrase: Phrase) -> String
     {
-        return "    \(instanceName)Universe.\(phrase.verb.name.toUTF8String())(\(self.generateArguments(phrase.arguments)));"
+        if instanceName == "this"
+        {
+            return "    \(phrase.verb.name.toUTF8String())(\(self.generateArguments(phrase.arguments)));"
+        }
+        else
+        {
+            return "    \(instanceName)->\(phrase.verb.name.toUTF8String())(\(self.generateArguments(phrase.arguments)));"
+        }
     }
 
     public func generateChainsAndPhrases(_ instanceName: String, _ chains: [Chain]) -> String

@@ -117,4 +117,33 @@ final class BellTests: XCTestCase
         let compiler = try BellCompiler(className: "tonesweep", source: text, output: url)
         try compiler.compile()
     }
+
+    func testCompilerFunctions() throws
+    {
+        let text: Text = """
+        instance codec : AudioControlSGTL5000
+
+        instance input : AudioInputI2S
+        instance tremolo : AudioEffectTremolo
+        instance mixer : AudioMixer4
+        instance output : AudioOutputI2S
+
+        flow input -> tremolo -> mixer -> output
+        flow input -> mixer
+
+        object main uses codec mixer tremolo
+        event main setup uses codec mixer tremolo : self setupCodec . self setupMixer . self setupTremolo
+        function main setupCodec uses codec : codec enable ; inputSelect 0 ; micGain 0 ; lineInLevel 5 5 ; lineOutLevel 20
+        function main setupMixer uses mixer : mixer gain 0 0.3 ; gain 1 0.7
+        function main setupTremolo uses tremolo : tremolo begin 100
+        """
+
+        let parser = BellParser()
+        let program = try parser.generateBellProgram(source: text)
+        print(program.description)
+
+        let url = URL(fileURLWithPath: "/Users/dr.brandonwiley/Documents/Arduino/ClockworkDemo")
+        let compiler = try BellCompiler(className: "tonesweep", source: text, output: url)
+        try compiler.compile()
+    }
 }

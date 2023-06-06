@@ -47,12 +47,12 @@ public class BellCompiler
         {
             print("Writing \(object.name.toUTF8String()).hpp...")
             let objectHeaderOutput = self.outputRoot.appendingPathComponent("\(object.name.toUTF8String()).hpp")
-            let objectHeader = generateObjectHeader(object)
+            let objectHeader = try generateObjectHeader(object)
             try objectHeader.write(to: objectHeaderOutput, atomically: true, encoding: .utf8)
 
             print("Writing \(object.name.toUTF8String()).cpp...")
             let objectSourceOutput = self.outputRoot.appendingPathComponent("\(object.name.toUTF8String()).cpp")
-            let objectSource = generateObjectSource(object)
+            let objectSource = try generateObjectSource(object)
             try objectSource.write(to: objectSourceOutput, atomically: true, encoding: .utf8)
         }
 
@@ -89,12 +89,14 @@ public class BellCompiler
             return setups.count > 0
         }
 
-        let setupHandlerText = setupObjects.map { self.generateHandlerText($0.name, "setup", $0.instances) } .joined(separator: "\n")
-        let loopHandlerText = loopObjects.map { self.generateHandlerText($0.name, "loop", $0.instances) } .joined(separator: "\n")
+        let setupHandlerText = setupObjects.map { self.generateHandlerText($0.name, "setup") } .joined(separator: "\n")
+        let loopHandlerText = loopObjects.map { self.generateHandlerText($0.name, "loop") } .joined(separator: "\n")
 
         return """
         #include <Arduino.h>
         #include "Audio.h"
+        \(program.objects.map { self.generateObjectInclude($0) }.joined(separator: "\n"))
+        \(program.instances.map { self.generateInclude($0) }.joined(separator: "\n"))
 
         \(program.instances.map { self.generateInstance($0) }.joined(separator: "\n"))
 
@@ -114,8 +116,23 @@ public class BellCompiler
         """
     }
 
+    public func generateInclude(_ instance: ModuleInstance) -> String
+    {
+        return """
+        #include "\(instance.module.toUTF8String())Module.h"
+        #include "\(instance.module.toUTF8String())Universe.h"
+        """
+    }
+
+    public func generateObjectInclude(_ object: Object) -> String
+    {
+        return """
+        #include "\(object.name.toUTF8String()).hpp"
+        """
+    }
+
     public func generateObjectReference(_ object: Object) throws -> String
     {
-        return "\(try object.name.uppercaseFirstLetter().toUTF8String()) \(object.name.toUTF8String());"
+        return "\(try object.name.uppercaseFirstLetter().toUTF8String()) \(object.name.toUTF8String())(\(object.instances.map { self.makeConstructorArgument($0) }.joined(separator: ", ")));"
     }
 }
