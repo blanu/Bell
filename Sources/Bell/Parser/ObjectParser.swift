@@ -23,8 +23,10 @@ extension BellParser
             let object = Object(name: name, instances: instances, eventHandlers: [], functions: [])
             let handlers = try self.findHandlers(object, declaration.name, instances, text)
             let functions = try self.findFunctions(object, declaration.name, instances, text)
+            let properties = try self.findProperties(object, declaration.name, instances, text)
             object.eventHandlers = handlers
             object.functions = functions
+            object.properties = properties
             results.append(object)
         }
 

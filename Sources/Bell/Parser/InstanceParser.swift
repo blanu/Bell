@@ -29,14 +29,7 @@ extension BellParser
             return goodLine.split(" : ")
         }
 
-        let goodParts = parts.filter
-        {
-            parts in
-
-            return parts.count == 2 && !parts[1].containsSubstring(" ")
-        }
-
-        let pairs = goodParts.compactMap
+        let pairs = parts.compactMap
         {
             parts in
 
@@ -48,9 +41,20 @@ extension BellParser
 
         let results = pairs.compactMap
         {
-            (instanceName, moduleName) in
+            (instanceName, rest) in
 
-            return ModuleInstance(module: moduleName, instanceName: instanceName)
+            if rest.containsSubstring(" ")
+            {
+                let parts = rest.split(" ")
+                let moduleName = parts[0]
+                let parameters = [Text](parts[1...])
+                return ModuleInstance(module: moduleName, instanceName: instanceName, parameters: parameters)
+            }
+            else
+            {
+                let moduleName = rest
+                return ModuleInstance(module: moduleName, instanceName: instanceName, parameters: [])
+            }
         }
 
         return results

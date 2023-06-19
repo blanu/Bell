@@ -13,13 +13,15 @@ public class EventHandler: Identifiable
 {
     public let objectName: Text
     public let eventName: Text
+    public let argumentTypes: [Text]
     public let modules: [ModuleInstance]
     public let block: Block
 
-    public init(objectName: Text, eventName: Text, modules: [ModuleInstance], block: Block)
+    public init(objectName: Text, eventName: Text, argumentTypes: [Text], modules: [ModuleInstance], block: Block)
     {
         self.objectName = objectName
         self.eventName = eventName
+        self.argumentTypes = argumentTypes
         self.modules = modules
         self.block = block
     }

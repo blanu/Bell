@@ -25,6 +25,7 @@ extension BellCompiler
             public:
         \(try self.generateConstructor(object))
         \(object.eventHandlers.map { self.generateHandlerDeclaration($0) }.joined(separator: "\n"))
+        \(try object.properties.map { try self.generatePropertyDeclaration($0) }.joined(separator: "\n"))
 
             private:
         \(object.functions.map { self.generateFunctionDeclarationText($0) }.joined(separator: "\n"))
@@ -119,6 +120,17 @@ extension BellCompiler
         """
     }
 
+    public func generatePropertyDeclaration(_ property: Property) throws -> String
+    {
+        switch property.moduleName
+        {
+            case "AnalogRead":
+                return "        int \(property.name) = 0;"
+
+            default:
+                throw ObjectCompilerError.unknownPropertyType(property.moduleName.toUTF8String())
+        }
+    }
 
     public func generateFunctionDefinition(_ object: Object, _ function: Function) throws -> String
     {
@@ -163,4 +175,20 @@ extension BellCompiler
     {
         return function.block.sentences.map { self.generateSentence($0) }.joined(separator: "\n")
     }
+
+    public func generateAnalogReadHandlerText(_ property: Property) throws -> String
+    {
+        guard let parameter = property.parameters.first else
+        {
+            throw ObjectCompilerError.missingAnalogReadParameter
+        }
+
+        return "  \(property.object)->\(property.name) = analogReadResult\(parameter);"
+    }
+}
+
+public enum ObjectCompilerError: Error
+{
+    case unknownPropertyType(String)
+    case missingAnalogReadParameter
 }

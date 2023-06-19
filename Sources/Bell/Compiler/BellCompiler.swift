@@ -61,6 +61,13 @@ public class BellCompiler
 
     public func generateIno(_ className: Text, _ program: BellProgram) throws -> String
     {
+        let analogReadInstances = program.instances.filter
+        {
+            instance in
+
+            return instance.module == "AnalogRead"
+        }
+
         let setupObjects = program.objects.filter
         {
             object in
@@ -89,16 +96,56 @@ public class BellCompiler
             return setups.count > 0
         }
 
-        let setupHandlerText = setupObjects.map { self.generateHandlerText($0.name, "setup") } .joined(separator: "\n")
-        let loopHandlerText = loopObjects.map { self.generateHandlerText($0.name, "loop") } .joined(separator: "\n")
+        let analogReadHandlers: [Property] = program.objects.flatMap
+        {
+            object in
+
+            return object.properties.filter
+            {
+                property in
+
+                return property.moduleName == "AnalogRead"
+            }
+        }
+
+        let setupHandlerText = setupObjects.map { self.generateHandlerText($0.name, "setup", argumentCount: 0) } .joined(separator: "\n")
+        let loopHandlerText = loopObjects.map { self.generateHandlerText($0.name, "loop", argumentCount: 0) } .joined(separator: "\n")
+        let analogReadHandlerText = try analogReadHandlers.map { try self.generateAnalogReadHandlerText($0) } .joined(separator: "\n")
+
+        var analogReadSet = Set<Text>()
+        for handler in analogReadHandlers
+        {
+            guard let parameter = handler.parameters.first else
+            {
+                continue
+            }
+
+            analogReadSet.insert(parameter)
+        }
+
+        var pinModes: [String] = []
+        for pin in analogReadSet
+        {
+            pinModes.append("  pinMode(\(pin), INPUT);")
+        }
+
+        let pinModeText = pinModes.joined(separator: "\n")
+
+        var analogReads: [String] = []
+        for pin in analogReadSet
+        {
+            analogReads.append("  int analogReadResult\(pin) = analogRead(\(pin));")
+        }
+
+        let analogReadText = analogReads.joined(separator: "\n")
 
         return """
         #include <Arduino.h>
         #include "Audio.h"
         \(program.objects.map { self.generateObjectInclude($0) }.joined(separator: "\n"))
-        \(program.instances.map { self.generateInclude($0) }.joined(separator: "\n"))
+        \(program.instances.filter { $0.module != "AnalogRead" }.map { self.generateInclude($0) }.joined(separator: "\n"))
 
-        \(program.instances.map { self.generateInstance($0) }.joined(separator: "\n"))
+        \(program.instances.filter { $0.module != "AnalogRead" }.map { self.generateInstance($0) }.joined(separator: "\n"))
 
         \(try program.objects.map { try self.generateObjectReference($0) }.joined(separator: "\n"))
         
@@ -107,11 +154,26 @@ public class BellCompiler
         void setup()
         {
         \(setupHandlerText)
+
+        \(pinModeText)
         }
 
         void loop()
         {
         \(loopHandlerText)
+
+          analogReadHandler();
+        }
+
+        void analogReadHandler()
+        {
+        \(analogReadText)
+
+          AudioNoInterrupts();
+
+        \(analogReadHandlerText)
+
+          AudioInterrupts();
         }
         """
     }
