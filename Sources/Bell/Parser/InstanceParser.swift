@@ -11,7 +11,7 @@ import Text
 
 extension BellParser
 {
-    public func findModuleInstances(_ source: Text) throws -> [ModuleInstance]
+    public func findModuleInstances(_ namespace: Namespace, _ source: Text) throws -> [ModuleInstance]
     {
         let lines = source.split("\n").filter
         {
@@ -42,6 +42,8 @@ extension BellParser
         let results = pairs.compactMap
         {
             (instanceName, rest) in
+
+            namespace.add(name: instanceName)
 
             if rest.containsSubstring(" ")
             {

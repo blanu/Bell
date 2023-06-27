@@ -61,13 +61,6 @@ public class BellCompiler
 
     public func generateIno(_ className: Text, _ program: BellProgram) throws -> String
     {
-        let analogReadInstances = program.instances.filter
-        {
-            instance in
-
-            return instance.module == "AnalogRead"
-        }
-
         let setupObjects = program.objects.filter
         {
             object in

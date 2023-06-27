@@ -26,7 +26,7 @@ extension BellCompiler
                     let (xname, xport) = try! x.splitOnLast(".")
                     let (yname, yport) = try! y.splitOnLast(".")
                     return """
-                    AudioConnection connection\(index)_\(z)a(\(xname.toUTF8String()), \(xport.toUTF8String()), \(yname.toUTF8String()), \(yport.toUTF8String());
+                    AudioConnection connection\(index)_\(z)a(\(xname.toUTF8String()), \(xport.toUTF8String()), \(yname.toUTF8String()), \(yport.toUTF8String()));
                     """
                 }
                 else

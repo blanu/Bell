@@ -52,6 +52,34 @@ extension Sentence: CustomStringConvertible
                 {
                     return "self " + (chains.map { $0.description }.joined(separator: " | "))
                 }
+
+            case .objectLocal(let name):
+                if chains.count == 0
+                {
+                    return "\(name)"
+                }
+                else if chains.count == 1
+                {
+                    return "\(name) \(chains[0].description)"
+                }
+                else
+                {
+                    return "\(name) " + (chains.map { $0.description }.joined(separator: " | "))
+                }
+
+            case .literal(let literal):
+                if chains.count == 0
+                {
+                    return "\(literal.description)"
+                }
+                else if chains.count == 1
+                {
+                    return "\(literal.description) \(chains[0].description)"
+                }
+                else
+                {
+                    return "\(literal.description) " + (chains.map { $0.description }.joined(separator: " | "))
+                }
         }
     }
 }

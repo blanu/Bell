@@ -24,9 +24,11 @@ public class BellParser
 
     public func generateBellProgram(source: Text) throws -> BellProgram
     {
-        let instances = try self.findModuleInstances(source)
+        let namespace = Namespace()
+
+        let instances = try self.findModuleInstances(namespace, source)
         let flows = try self.findFlows(instances, source)
-        let objects = try self.findObjects(instances, source)
+        let objects = try self.findObjects(namespace, instances, source)
 
         return BellProgram(instances: instances, flows: flows, objects: objects)
     }
@@ -42,4 +44,5 @@ public enum BellParserError: Error
 {
     case noPart
     case wrongType
+    case unknownFunction(String)
 }

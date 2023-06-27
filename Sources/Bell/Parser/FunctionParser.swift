@@ -11,7 +11,7 @@ import Text
 
 extension BellParser
 {
-    public func findFunctions(_ object: Object, _ objectName: Text, _ instances: [ModuleInstance], _ source: Text) throws -> [Function]
+    public func findFunctions(_ namespace: Namespace, _ object: Object, _ objectName: Text, _ instances: [ModuleInstance], _ source: Text) throws -> [Function]
     {
         let lines = source.split("\n").filter
         {
@@ -33,25 +33,48 @@ extension BellParser
         {
             (definitionText: Text, blockText: Text) -> Function? in
 
-            guard let (objectName, functionName, arity, modules) = try self.parseFunctionDefinition(instances, definitionText) else
+            guard let (objectName, functionName, arity, modules, returnType) = try self.parseFunctionDefinition(namespace, instances, definitionText) else
             {
                 return nil
             }
 
-            guard let block = parseBlock(object, instances, blockText) else
+            guard let block = try parseBlock(namespace, object, instances, blockText) else
             {
                 return nil
             }
 
-            return Function(object: objectName, name: functionName, arity: arity, modules: modules, block: block)
+            return Function(object: objectName, name: functionName, arity: arity, modules: modules, returnType: returnType, block: block)
         }
     }
 
-    public func parseFunctionDefinition(_ instances: [ModuleInstance], _ declaration: Text) throws -> (objectName: Text, functionName: Text, arity: Int, modules: [ModuleInstance])?
+    public func parseFunctionDefinition(_ namespace: Namespace, _ instances: [ModuleInstance], _ declaration: Text) throws -> (objectName: Text, functionName: Text, arity: Int, modules: [ModuleInstance], returnType: Type)?
     {
-        let declarationText: Text
+        var declarationText: Text = declaration
+
+        let returnType: Type
+        if declarationText.containsSubstring(" -> ")
+        {
+            let parts = declarationText.split(" -> ")
+            guard parts.count == 2 else
+            {
+                return nil
+            }
+
+            guard let type = Type(rawValue: parts[1].toUTF8String()) else
+            {
+                return nil
+            }
+
+            returnType = type
+            declarationText = parts[0]
+        }
+        else
+        {
+            returnType = .void
+        }
+
         let modules: [ModuleInstance]
-        if declaration.containsSubstring(" uses ")
+        if declarationText.containsSubstring(" uses ")
         {
             let parts = declaration.split(" uses ")
             guard parts.count == 2 else
@@ -77,7 +100,6 @@ extension BellParser
         }
         else
         {
-            declarationText = declaration
             modules = []
         }
 
@@ -114,6 +136,6 @@ extension BellParser
             }
         }
 
-        return (objectName: objectName, functionName: eventName, arity: arity, modules: modules)
+        return (objectName: objectName, functionName: eventName, arity: arity, modules: modules, returnType: returnType)
     }
 }

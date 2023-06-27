@@ -13,7 +13,6 @@ public class BellProgram
     public var instances: [ModuleInstance] = []
     public var flows: [Flow] = []
     public var objects: [Object] = []
-    public var properties: [Property] = []
 
     public init()
     {

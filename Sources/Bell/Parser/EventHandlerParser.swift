@@ -11,7 +11,7 @@ import Text
 
 extension BellParser
 {
-    public func findHandlers(_ object: Object, _ objectName: Text, _ instances: [ModuleInstance], _ source: Text) throws -> [EventHandler]
+    public func findHandlers(_ namespace: Namespace, _ object: Object, _ objectName: Text, _ instances: [ModuleInstance], _ source: Text) throws -> [EventHandler]
     {
         let lines = source.split("\n").filter
         {
@@ -29,7 +29,7 @@ extension BellParser
             return try goodLine.splitOn(" : ")
         }
 
-        return pairs.compactMap
+        return try pairs.compactMap
         {
             (declaration: Text, blockText: Text) -> EventHandler? in
 
@@ -38,7 +38,7 @@ extension BellParser
                 return nil
             }
 
-            guard let block = parseBlock(object, instances, blockText) else
+            guard let block = try parseBlock(namespace, object, instances, blockText) else
             {
                 return nil
             }

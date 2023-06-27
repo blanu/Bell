@@ -78,23 +78,24 @@ extension BellCompiler
 
     public func generateFunctionDeclarationText(_ function: Function) -> String
     {
+        let returnTypeText: String = function.returnType.rawValue
         switch function.arity
         {
             case 0:
                 return """
-                        void \(function.name.toUTF8String())();
+                        \(returnTypeText) \(function.name.toUTF8String())();
                 """
             case 1:
                 return """
-                        void \(function.name.toUTF8String())(x);
+                        \(returnTypeText) \(function.name.toUTF8String())(x);
                 """
             case 2:
                 return """
-                        void \(function.name.toUTF8String())(x, y);
+                        \(returnTypeText) \(function.name.toUTF8String())(x, y);
                 """
             case 3:
                 return """
-                        void \(function.name.toUTF8String())(x, y, z);
+                        \(returnTypeText) \(function.name.toUTF8String())(x, y, z);
                 """
 
             default:
@@ -115,7 +116,7 @@ extension BellCompiler
         return """
         void \(try object.name.uppercaseFirstLetter().toUTF8String())::\(handler.eventName.toUTF8String())()
         {
-        \(handler.block.sentences.map { self.generateSentence($0) }.joined(separator: "\n"))
+        \(try handler.block.sentences.map { try self.generateSentence(object, $0) }.joined(separator: "\n"))
         }
         """
     }
@@ -138,30 +139,30 @@ extension BellCompiler
         {
             case 0:
                 return """
-                void \(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())()
+                \(function.returnType.rawValue) \(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())()
                 {
-                \(self.generateFunctionText(function))
+                \(try self.generateFunctionText(object, function))
                 }
                 """
             case 1:
                 return """
-                void \(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())(x)
+                \(function.returnType.rawValue) \(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())(x)
                 {
-                \(self.generateFunctionText(function))
+                \(try self.generateFunctionText(object, function))
                 }
                 """
             case 2:
                 return """
-                void \(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())(x, y)
+                \(function.returnType.rawValue) \(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())(x, y)
                 {
-                \(self.generateFunctionText(function))
+                \(try self.generateFunctionText(object, function))
                 }
                 """
             case 3:
                 return """
-                void \(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())(x, y, z)
+                \(function.returnType.rawValue) \(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())(x, y, z)
                 {
-                \(self.generateFunctionText(function))
+                \(try self.generateFunctionText(object, function))
                 }
                 """
 
@@ -171,9 +172,16 @@ extension BellCompiler
         }
     }
 
-    public func generateFunctionText(_ function: Function) -> String
+    public func generateFunctionText(_ object: Object, _ function: Function) throws -> String
     {
-        return function.block.sentences.map { self.generateSentence($0) }.joined(separator: "\n")
+        if function.returnType == .void
+        {
+            return "  \(try function.block.sentences.map { try self.generateSentence(object, $0) }.joined(separator: "\n"));"
+        }
+        else
+        {
+            return "  return \(try function.block.sentences.map { try self.generateSentence(object, $0) }.joined(separator: "\n"));"
+        }
     }
 
     public func generateAnalogReadHandlerText(_ property: Property) throws -> String
@@ -183,7 +191,7 @@ extension BellCompiler
             throw ObjectCompilerError.missingAnalogReadParameter
         }
 
-        return "  \(property.object)->\(property.name) = analogReadResult\(parameter);"
+        return "  \(property.object).\(property.name) = analogReadResult\(parameter);"
     }
 }
 

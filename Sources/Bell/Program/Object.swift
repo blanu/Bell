@@ -35,7 +35,6 @@ extension Object: CustomStringConvertible
         object \(self.name.toUTF8String()) uses \(self.instances.map { $0.instanceName.toUTF8String() }.joined(separator: " "))
         \(self.eventHandlers.map { $0.description }.joined(separator: "\n"))
         \(self.functions.map { $0.description }.joined(separator: "\n"))
-        \(self.functions.map { $0.description }.joined(separator: "\n"))
         \(self.properties.map { $0.description }.joined(separator: "\n"))
         """
     }

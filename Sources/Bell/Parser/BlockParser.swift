@@ -11,17 +11,17 @@ import Text
 
 extension BellParser
 {
-    func parseBlock(_ object: Object, _ instances: [ModuleInstance], _ text: Text) -> Block?
+    func parseBlock(_ namespace: Namespace, _ object: Object, _ instances: [ModuleInstance], _ text: Text) throws -> Block?
     {
         if text.containsSubstring(" . ")
         {
             let parts = text.split(" . ")
-            let sentences = parts.compactMap { parseSentence(object, instances, $0) }
+            let sentences = try parts.compactMap { try parseSentence(namespace, object, instances, $0) }
             return Block(sentences)
         }
         else
         {
-            guard let sentence = parseSentence(object, instances, text) else
+            guard let sentence = try parseSentence(namespace, object, instances, text) else
             {
                 return nil
             }
@@ -30,7 +30,7 @@ extension BellParser
         }
     }
 
-    public func parseSentence(_ object: Object, _ instances: [ModuleInstance], _ text: Text) -> Sentence?
+    public func parseSentence(_ namespace: Namespace, _ object: Object, _ instances: [ModuleInstance], _ text: Text) throws -> Sentence?
     {
         guard let (subjectText, rest) = try? text.splitOn(" ") else
         {
@@ -44,19 +44,30 @@ extension BellParser
         }
         else
         {
-            let maybeSubject = instances.first
+            let floatRegex = try Regex("^[0-9]+\\.[0-9]+$")
+            let integerRegex = try Regex("^[0-9]+$")
+
+            if subjectText.containsRegex(floatRegex)
             {
-                instance in
-
-                return instance.instanceName == subjectText
+                subject = Subject.literal(.float(Double(string: subjectText.toUTF8String())))
             }
+            else if subjectText.containsRegex(integerRegex)
+            {
+                guard let int = Int64(subjectText.toUTF8String()) else
+                {
+                    return nil
+                }
 
-            guard let actualSubject = maybeSubject else
+                subject = Subject.literal(.int(int))
+            }
+            else if namespace.contains(name: subjectText)
+            {
+                subject = .objectLocal(subjectText)
+            }
+            else
             {
                 return nil
             }
-
-            subject = .instance(actualSubject)
         }
 
         do
@@ -64,11 +75,11 @@ extension BellParser
             let chains: [Chain]
             if rest.containsSubstring(" | ")
             {
-                chains = try self.parseChains(subject, rest)
+                chains = try self.parseChains(namespace, subject, rest, object.properties, object.functions)
             }
             else
             {
-                let phrases = try self.parsePhrases(subject, rest)
+                let phrases = try self.parsePhrases(namespace, subject, rest, object.properties, object.functions)
                 chains = [Chain(phrases: phrases)]
             }
 
@@ -80,29 +91,29 @@ extension BellParser
         }
     }
 
-    public func parseChains(_ subject: Subject, _ text: Text) throws -> [Chain]
+    public func parseChains(_ namespace: Namespace, _ subject: Subject, _ text: Text, _ properties: [Property], _ functions: [Function]) throws -> [Chain]
     {
         let parts = text.split(" | ")
         return try parts.compactMap
         {
             part in
 
-            return try parseChain(subject, part)
+            return try parseChain(namespace, subject, part, properties, functions)
         }
     }
 
-    public func parseChain(_ subject: Subject, _ text: Text) throws -> Chain?
+    public func parseChain(_ namespace: Namespace, _ subject: Subject, _ text: Text, _ properties: [Property], _ functions: [Function]) throws -> Chain?
     {
         do
         {
             let phrases: [Phrase]
             if text.containsSubstring(" ; ")
             {
-                phrases = try self.parsePhrases(subject, text)
+                phrases = try self.parsePhrases(namespace, subject, text, properties, functions)
             }
             else
             {
-                phrases = [try self.parsePhrase(subject, text)]
+                phrases = [try self.parsePhrase(namespace, subject, text, properties, functions)]
             }
 
             return Chain(phrases: phrases)
@@ -114,18 +125,18 @@ extension BellParser
     }
 
 
-    public func parsePhrases(_ subject: Subject, _ text: Text) throws -> [Phrase]
+    public func parsePhrases(_ namespace: Namespace, _ subject: Subject, _ text: Text, _ properties: [Property], _ functions: [Function]) throws -> [Phrase]
     {
         let parts = text.split(" ; ")
         return try parts.map
         {
             part in
 
-            return try parsePhrase(subject, part)
+            return try parsePhrase(namespace, subject, part, properties, functions)
         }
     }
 
-    public func parsePhrase(_ subject: Subject, _ text: Text) throws -> Phrase
+    public func parsePhrase(_ namespace: Namespace, _ subject: Subject, _ text: Text, _ properties: [Property], _ functions: [Function]) throws -> Phrase
     {
         guard text.containsSubstring(" ") else
         {
@@ -160,6 +171,10 @@ extension BellParser
             if argumentText.startsWith(":")
             {
                 return Argument.name(argumentText)
+            }
+            else if namespace.contains(name: argumentText)
+            {
+                return Argument.objectLocal(argumentText)
             }
             else
             {

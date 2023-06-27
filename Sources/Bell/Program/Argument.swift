@@ -13,6 +13,7 @@ public enum Argument
 {
     case name(Text)
     case literal(Literal)
+    case objectLocal(Text)
 }
 
 extension Argument: CustomStringConvertible
@@ -26,6 +27,9 @@ extension Argument: CustomStringConvertible
                 
             case .literal(let value):
                 return value.description
+
+            case .objectLocal(let name):
+                return name.toUTF8String()
         }
     }
 }

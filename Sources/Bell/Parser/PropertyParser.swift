@@ -11,7 +11,7 @@ import Text
 
 extension BellParser
 {
-    public func findProperties(_ object: Object, _ objectName: Text, _ instances: [ModuleInstance], _ source: Text) throws -> [Property]
+    public func findProperties(_ namespace: Namespace, _ object: Object, _ objectName: Text, _ instances: [ModuleInstance], _ source: Text) throws -> [Property]
     {
         let lines = source.split("\n").filter
         {

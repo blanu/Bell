@@ -7,8 +7,12 @@
 
 import Foundation
 
+import Text
+
 public enum Subject
 {
     case instance(ModuleInstance)
     case `self`(Object)
+    case literal(Literal)
+    case objectLocal(Text)
 }
