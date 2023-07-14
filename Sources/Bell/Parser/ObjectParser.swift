@@ -19,11 +19,11 @@ extension BellParser
 
         for declaration in declarations
         {
-            let (name, instances) = declaration
+            let (name, instances, parentType) = declaration
 
             namespace.add(name: name)
 
-            let object = Object(name: name, instances: instances, eventHandlers: [], functions: [])
+            let object = Object(name: name, parentType: parentType, instances: instances, eventHandlers: [], functions: [])
 
             let objectNamespace = prepopulateNamespace(namespace, name, instances, text)
 
@@ -98,7 +98,7 @@ extension BellParser
         return namespace
     }
 
-    public func findObjectDeclarations(_ namespace: Namespace, _ instances: [ModuleInstance], _ text: Text) throws -> [(name: Text, modules: [ModuleInstance])]
+    public func findObjectDeclarations(_ namespace: Namespace, _ instances: [ModuleInstance], _ text: Text) throws -> [(name: Text, modules: [ModuleInstance], parentType: Text)]
     {
         let lines = text.split("\n")
 
@@ -106,20 +106,39 @@ extension BellParser
         {
             line in
 
-            return line.startsWith("object ")
+            return line.startsWith("object ") || line.startsWith("effect ")
         }
 
         return try goodLines.compactMap
         {
             line in
 
-            let goodLine = try line.dropPrefix("object ")
+            var goodLine: Text
+            let parentType: Text
+            if line.startsWith("effect ")
+            {
+                goodLine = try line.dropPrefix("effect ")
+                let parts = goodLine.split(" : ")
+                guard parts.count == 2 else
+                {
+                    throw ObjectParserError.effectRequiresParentType
+                }
+
+                goodLine = parts[0]
+                parentType = parts[1]
+            }
+            else
+            {
+                goodLine = try line.dropPrefix("object ")
+                parentType = "Object"
+            }
+
             if goodLine.containsSubstring(" uses ")
             {
                 let sections = goodLine.split(" uses ")
                 guard sections.count == 2 else
                 {
-                    return nil
+                    throw ObjectParserError.usesMissingModules
                 }
 
                 let name = sections[0]
@@ -135,13 +154,18 @@ extension BellParser
                     }
                 }
 
-                return (name, objectInstances)
+                return (name, objectInstances, parentType)
             }
             else
             {
-                let name = try goodLine.dropPrefix("object ")
-                return (name, [])
+                return (goodLine, [], parentType)
             }
         }
     }
+}
+
+public enum ObjectParserError: Error
+{
+    case effectRequiresParentType
+    case usesMissingModules
 }

@@ -33,21 +33,21 @@ extension BellParser
         {
             (definitionText: Text, blockText: Text) -> Function? in
 
-            guard let (objectName, functionName, arity, modules, returnType) = try self.parseFunctionDefinition(namespace, instances, definitionText) else
+            guard let (objectName, functionName, argumentTypes, modules, returnType) = try self.parseFunctionDefinition(namespace, instances, definitionText) else
             {
                 return nil
             }
 
-            guard let block = try parseBlock(namespace, object, instances, blockText) else
+            guard let block = try parseBlock(namespace, object, argumentTypes, instances, blockText) else
             {
                 return nil
             }
 
-            return Function(object: objectName, name: functionName, arity: arity, modules: modules, returnType: returnType, block: block)
+            return Function(object: objectName, name: functionName, argumentTypes: argumentTypes, modules: modules, returnType: returnType, block: block)
         }
     }
 
-    public func parseFunctionDefinition(_ namespace: Namespace, _ instances: [ModuleInstance], _ declaration: Text) throws -> (objectName: Text, functionName: Text, arity: Int, modules: [ModuleInstance], returnType: Type)?
+    public func parseFunctionDefinition(_ namespace: Namespace, _ instances: [ModuleInstance], _ declaration: Text) throws -> (objectName: Text, functionName: Text, argumentTypes: [Text], modules: [ModuleInstance], returnType: Type)?
     {
         var declarationText: Text = declaration
 
@@ -113,29 +113,58 @@ extension BellParser
         let objectName = parts[0]
         let eventName = parts[1]
 
-        let rest = parts[2...]
-        var arity: Int = 0
-        if (rest.count >= 1) && (rest[0] == "x")
+        let rest = [Text](parts[2...])
+        guard rest.count <= 3 else
         {
-            arity = 1
-            
-            if (rest.count >= 2) && (rest[1] == "y")
+            return nil
+        }
+
+        var argumentTypes: [Text] = []
+        if rest.count >= 1
+        {
+            if rest[0].startsWith("x:")
             {
-                arity = 2
-                
-                if (rest.count >= 3) && (rest[2] == "z")
+                do
                 {
-                    arity = 3
-                    
-                    if rest.count >= 4
-                    {
-                        print("unsupported arity \(rest.count)")
-                        return nil
-                    }
+                    argumentTypes.append(try rest[0].dropPrefix("x:"))
+                }
+                catch
+                {
+                    return nil
                 }
             }
         }
 
-        return (objectName: objectName, functionName: eventName, arity: arity, modules: modules, returnType: returnType)
+        if rest.count >= 2
+        {
+            if rest[1].startsWith("y:")
+            {
+                do
+                {
+                    argumentTypes.append(try rest[1].dropPrefix("y:"))
+                }
+                catch
+                {
+                    return nil
+                }
+            }
+        }
+
+        if rest.count == 3
+        {
+            if rest[2].startsWith("z:")
+            {
+                do
+                {
+                    argumentTypes.append(try rest[2].dropPrefix("z:"))
+                }
+                catch
+                {
+                    return nil
+                }
+            }
+        }
+
+        return (objectName: objectName, functionName: eventName, argumentTypes: argumentTypes, modules: modules, returnType: returnType)
     }
 }

@@ -13,16 +13,16 @@ public class Function
 {
     var object: Text
     var name: Text
-    var arity: Int
+    var argumentTypes: [Text]
     var modules: [ModuleInstance]
     var returnType: Type
     var block: Block
 
-    public init(object: Text, name: Text, arity: Int, modules: [ModuleInstance], returnType: Type, block: Block)
+    public init(object: Text, name: Text, argumentTypes: [Text], modules: [ModuleInstance], returnType: Type, block: Block)
     {
         self.object = object
         self.name = name
-        self.arity = arity
+        self.argumentTypes = argumentTypes
         self.modules = modules
         self.returnType = returnType
         self.block = block
@@ -50,22 +50,22 @@ extension Function: CustomStringConvertible
         }
         else
         {
-            returnType = " \(self.returnType.rawValue)"
+            returnType = " -> \(self.returnType.rawValue)"
         }
 
-        switch self.arity
+        switch self.argumentTypes.count
         {
             case 0:
                 return "function \(self.object.toUTF8String()) \(self.name.toUTF8String())\(uses)\(returnType) : \(self.block.description)"
 
             case 1:
-                return "function \(self.object.toUTF8String()) \(self.name.toUTF8String()) x\(uses)\(returnType) : \(self.block.description)"
+                return "function \(self.object.toUTF8String()) \(self.name.toUTF8String()) x:\(self.argumentTypes[0])\(uses)\(returnType) : \(self.block.description)"
 
             case 2:
-                return "function \(self.object.toUTF8String()) \(self.name.toUTF8String()) x y\(uses)\(returnType) : \(self.block.description)"
+                return "function \(self.object.toUTF8String()) \(self.name.toUTF8String()) x:\(self.argumentTypes[0]) y:\(self.argumentTypes[1])\(uses)\(returnType) : \(self.block.description)"
 
             case 3:
-                return "function \(self.object.toUTF8String()) \(self.name.toUTF8String()) x y z\(uses)\(returnType) : \(self.block.description)"
+                return "function \(self.object.toUTF8String()) \(self.name.toUTF8String()) x\(self.argumentTypes[0]) y\(self.argumentTypes[1]) z\(self.argumentTypes[2])\(uses)\(returnType) : \(self.block.description)"
 
             default:
                 return "function with unsupported arity"

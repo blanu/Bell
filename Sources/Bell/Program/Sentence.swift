@@ -80,6 +80,20 @@ extension Sentence: CustomStringConvertible
                 {
                     return "\(literal.description) " + (chains.map { $0.description }.joined(separator: " | "))
                 }
+
+            case .parameter(name: let name, type: _):
+                if chains.count == 0
+                {
+                    return "\(name)"
+                }
+                else if chains.count == 1
+                {
+                    return "\(name) \(chains[0].description)"
+                }
+                else
+                {
+                    return "\(name) " + (chains.map { $0.description }.joined(separator: " | "))
+                }
         }
     }
 }

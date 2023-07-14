@@ -45,15 +45,30 @@ public class BellCompiler
 
         for object in self.program.objects
         {
-            print("Writing \(object.name.toUTF8String()).hpp...")
-            let objectHeaderOutput = self.outputRoot.appendingPathComponent("\(object.name.toUTF8String()).hpp")
-            let objectHeader = try generateObjectHeader(object)
-            try objectHeader.write(to: objectHeaderOutput, atomically: true, encoding: .utf8)
+            if object.parentType == "Object"
+            {
+                print("Writing \(object.name.toUTF8String()).hpp...")
+                let objectHeaderOutput = self.outputRoot.appendingPathComponent("\(object.name.toUTF8String()).hpp")
+                let objectHeader = try generateObjectHeader(object)
+                try objectHeader.write(to: objectHeaderOutput, atomically: true, encoding: .utf8)
 
-            print("Writing \(object.name.toUTF8String()).cpp...")
-            let objectSourceOutput = self.outputRoot.appendingPathComponent("\(object.name.toUTF8String()).cpp")
-            let objectSource = try generateObjectSource(object)
-            try objectSource.write(to: objectSourceOutput, atomically: true, encoding: .utf8)
+                print("Writing \(object.name.toUTF8String()).cpp...")
+                let objectSourceOutput = self.outputRoot.appendingPathComponent("\(object.name.toUTF8String()).cpp")
+                let objectSource = try generateObjectSource(object)
+                try objectSource.write(to: objectSourceOutput, atomically: true, encoding: .utf8)
+            }
+            else
+            {
+                print("Writing \(object.name.toUTF8String()).hpp...")
+                let objectHeaderOutput = self.outputRoot.appendingPathComponent("\(object.name.toUTF8String()).hpp")
+                let objectHeader = try generateEffectHeader(object)
+                try objectHeader.write(to: objectHeaderOutput, atomically: true, encoding: .utf8)
+
+                print("Writing \(object.name.toUTF8String()).cpp...")
+                let objectSourceOutput = self.outputRoot.appendingPathComponent("\(object.name.toUTF8String()).cpp")
+                let objectSource = try generateEffectSource(object)
+                try objectSource.write(to: objectSourceOutput, atomically: true, encoding: .utf8)
+            }
         }
 
         print("Done.")

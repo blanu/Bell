@@ -15,4 +15,5 @@ public enum Subject
     case `self`(Object)
     case literal(Literal)
     case objectLocal(Text)
+    case parameter(name: Text, type: Text)
 }

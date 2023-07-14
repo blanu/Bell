@@ -12,4 +12,6 @@ public enum Type: String
     case float
     case int
     case void
+    case intMultitude = "#int"
+    case floatMultitude = "#float"
 }

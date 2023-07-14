@@ -33,23 +33,23 @@ extension BellParser
         {
             (declaration: Text, blockText: Text) -> EventHandler? in
 
-            guard let (objectName, eventName, argumentTypes, modules) = self.parseEventHandlerDeclaration(instances, declaration) else
+            guard let (objectName, eventName, argumentTypes, returnType, modules) = self.parseEventHandlerDeclaration(instances, declaration) else
             {
                 return nil
             }
 
-            guard let block = try parseBlock(namespace, object, instances, blockText) else
+            guard let block = try parseBlock(namespace, object, argumentTypes, instances, blockText) else
             {
                 return nil
             }
 
-            return EventHandler(objectName: objectName, eventName: eventName, argumentTypes: argumentTypes, modules: modules, block: block)
+            return EventHandler(objectName: objectName, eventName: eventName, argumentTypes: argumentTypes, returnType: returnType, modules: modules, block: block)
         }
     }
 
-    public func parseEventHandlerDeclaration(_ instances: [ModuleInstance], _ declaration: Text) -> (objectName: Text, eventName: Text, argumentTypes: [Text], modules: [ModuleInstance])?
+    public func parseEventHandlerDeclaration(_ instances: [ModuleInstance], _ declaration: Text) -> (objectName: Text, eventName: Text, argumentTypes: [Text], returnType: Text?, modules: [ModuleInstance])?
     {
-        let declarationText: Text
+        var declarationText: Text
         let modules: [ModuleInstance]
         if declaration.containsSubstring(" uses ")
         {
@@ -79,6 +79,22 @@ extension BellParser
         {
             declarationText = declaration
             modules = []
+        }
+
+        let returnType: Text?
+        if declarationText.containsSubstring(" -> ")
+        {
+            let parts = declarationText.split(" -> ")
+            guard parts.count == 2 else
+            {
+                return nil
+            }
+            declarationText = parts[0]
+            returnType = parts[1]
+        }
+        else
+        {
+            returnType = nil
         }
 
         let parts: [Text] = declarationText.split(" ")
@@ -143,6 +159,6 @@ extension BellParser
             }
         }
 
-        return (objectName: objectName, eventName: eventName, argumentTypes: argumentTypes, modules: modules)
+        return (objectName: objectName, eventName: eventName, argumentTypes: argumentTypes, returnType: returnType, modules: modules)
     }
 }

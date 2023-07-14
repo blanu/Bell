@@ -135,38 +135,11 @@ final class BellTests: XCTestCase
     func testCompilerAnalogReadTremoloEffect() throws
     {
         let text: Text = """
-        audioEffect tremolo
-        event tremolo update x : x * wave
-        function tremolo wave : append ones zeros
-        function tremolo ones : 1 replicate 100
-        function tremolo zeros : 0 replicate 100
-
-        instance codec : AudioControlSGTL5000
-        instance input : AudioInputI2S
-        instance mixer : AudioMixer4
-        instance tremolo : AudioEffectTremolo
-        instance output : AudioOutputI2S
-
-        flow input.0 -> tremolo.0 -> mixer.0 -> output.0
-        flow input.1              -> mixer.1
-
-        object control uses codec mixer tremolo
-
-        property control speedKnob : AnalogRead A0
-        property control volumeKnob : AnalogRead A1
-        property control depthKnob : AnalogRead A2
-        property control shapeKnob : AnalogRead A3
-
-        function control speed -> int : speedKnob rescale 0 1023 85 915
-        function control volume -> float : volumeKnob normalize 0 1023
-        function control rightDepth -> float : depthKnob normalize 0 1023
-        function control leftDepth -> float : 1 - rightDepth
-        function control rightGain -> float : rightDepth * volume
-        function control leftGain -> float : leftDepth * volume
-        function control shape -> float : shapeKnob rescale 0 1023 0 1
-
-        event control setup uses codec tremolo : codec enable . codec volume 0.5 0.5 . tremolo begin 200
-        event control loop uses codec mixer tremolo : codec volume volume volume . mixer gain 0 leftGain . mixer gain 1 rightGain . tremolo setSpeed speed . tremolo setWaveform shape
+        effect AudioEffectTremolo : AudioEffect
+        event AudioEffectTremolo update x:#int -> #int : x * wave
+        function AudioEffectTremolo wave -> #int : ones append zeros
+        function AudioEffectTremolo ones -> #int : 1 replicate 100
+        function AudioEffectTremolo zeros -> #int : 0 replicate 100
         """
 
         let parser = BellParser()

@@ -11,17 +11,17 @@ import Text
 
 extension BellParser
 {
-    func parseBlock(_ namespace: Namespace, _ object: Object, _ instances: [ModuleInstance], _ text: Text) throws -> Block?
+    func parseBlock(_ namespace: Namespace, _ object: Object, _ argumentTypes: [Text], _ instances: [ModuleInstance], _ text: Text) throws -> Block?
     {
         if text.containsSubstring(" . ")
         {
             let parts = text.split(" . ")
-            let sentences = try parts.compactMap { try parseSentence(namespace, object, instances, $0) }
+            let sentences = try parts.compactMap { try parseSentence(namespace, object, argumentTypes, instances, $0) }
             return Block(sentences)
         }
         else
         {
-            guard let sentence = try parseSentence(namespace, object, instances, text) else
+            guard let sentence = try parseSentence(namespace, object, argumentTypes, instances, text) else
             {
                 return nil
             }
@@ -30,7 +30,7 @@ extension BellParser
         }
     }
 
-    public func parseSentence(_ namespace: Namespace, _ object: Object, _ instances: [ModuleInstance], _ text: Text) throws -> Sentence?
+    public func parseSentence(_ namespace: Namespace, _ object: Object, _ argumentsTypes: [Text], _ instances: [ModuleInstance], _ text: Text) throws -> Sentence?
     {
         guard let (subjectText, rest) = try? text.splitOn(" ") else
         {
@@ -41,6 +41,18 @@ extension BellParser
         if subjectText == "self"
         {
             subject = .`self`(object)
+        }
+        else if subjectText == "x", argumentsTypes.count >= 1
+        {
+            subject = .parameter(name: "x", type: argumentsTypes[0])
+        }
+        else if subjectText == "y", argumentsTypes.count >= 2
+        {
+            subject = .parameter(name: "y", type: argumentsTypes[1])
+        }
+        else if subjectText == "z", argumentsTypes.count >= 3
+        {
+            subject = .parameter(name: "z", type: argumentsTypes[2])
         }
         else
         {

@@ -78,37 +78,59 @@ extension BellCompiler
 
     public func generateFunctionDeclarationText(_ function: Function) -> String
     {
-        let returnTypeText: String = function.returnType.rawValue
-        switch function.arity
+        let returnTypeText: String
+        switch function.returnType
+        {
+            case .intMultitude:
+                returnTypeText = "int *"
+
+            case .floatMultitude:
+                returnTypeText = "float *"
+
+            default:
+                returnTypeText = "\(function.returnType.rawValue) "
+        }
+
+
+        switch function.argumentTypes.count
         {
             case 0:
                 return """
-                        \(returnTypeText) \(function.name.toUTF8String())();
+                        \(returnTypeText)\(function.name.toUTF8String())();
                 """
             case 1:
                 return """
-                        \(returnTypeText) \(function.name.toUTF8String())(x);
+                        \(returnTypeText)\(function.name.toUTF8String())(x:\(function.argumentTypes[0]));
                 """
             case 2:
                 return """
-                        \(returnTypeText) \(function.name.toUTF8String())(x, y);
+                        \(returnTypeText)\(function.name.toUTF8String())(x:\(function.argumentTypes[0]), y:\(function.argumentTypes[1]));
                 """
             case 3:
                 return """
-                        \(returnTypeText) \(function.name.toUTF8String())(x, y, z);
+                        \(returnTypeText)\(function.name.toUTF8String())(x:\(function.argumentTypes[0]), y:\(function.argumentTypes[1]), z:\(function.argumentTypes[2]));
                 """
 
             default:
-                print("Unsupported arity \(function.arity)")
+                print("Unsupported arity \(function.argumentTypes.count)")
                 return ""
         }
     }
 
     public func generateHandlerDeclaration(_ handler: EventHandler) -> String
     {
-        return """
-                void \(handler.eventName.toUTF8String())();
-        """
+        if handler.eventName == "update"
+        {
+            return """
+                    virtual void \(handler.eventName.toUTF8String())(void);
+            """
+        }
+        else
+        {
+            return """
+                    void \(handler.eventName.toUTF8String())();
+            """
+        }
     }
 
     public func generateHandlerDefinition(_ object: Object, _ handler: EventHandler) throws -> String
@@ -135,39 +157,52 @@ extension BellCompiler
 
     public func generateFunctionDefinition(_ object: Object, _ function: Function) throws -> String
     {
-        switch function.arity
+        let returnTypeText: String
+        switch function.returnType
+        {
+            case .intMultitude:
+                returnTypeText = "int *"
+
+            case .floatMultitude:
+                returnTypeText = "float *"
+
+            default:
+                returnTypeText = "\(function.returnType.rawValue) "
+        }
+
+        switch function.argumentTypes.count
         {
             case 0:
                 return """
-                \(function.returnType.rawValue) \(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())()
+                \(returnTypeText)\(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())()
                 {
                 \(try self.generateFunctionText(object, function))
                 }
                 """
             case 1:
                 return """
-                \(function.returnType.rawValue) \(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())(x)
+                \(returnTypeText)\(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())(x)
                 {
                 \(try self.generateFunctionText(object, function))
                 }
                 """
             case 2:
                 return """
-                \(function.returnType.rawValue) \(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())(x, y)
+                \(returnTypeText)\(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())(x, y)
                 {
                 \(try self.generateFunctionText(object, function))
                 }
                 """
             case 3:
                 return """
-                \(function.returnType.rawValue) \(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())(x, y, z)
+                \(returnTypeText)\(try object.name.uppercaseFirstLetter().toUTF8String())::\(function.name.toUTF8String())(x, y, z)
                 {
                 \(try self.generateFunctionText(object, function))
                 }
                 """
 
             default:
-                print("Unsupported arity \(function.arity)")
+                print("Unsupported arity \(function.argumentTypes.count)")
                 return ""
         }
     }

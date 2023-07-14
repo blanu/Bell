@@ -22,15 +22,15 @@ extension BellCompiler
                 }
                 else if sentence.chains.count == 1
                 {
-                    return try self.generatePhrases(object, instance.instanceName.toUTF8String(), sentence.chains[0].phrases) + ";\n"
+                    return try self.generatePhrases(object, sentence.subject, instance.instanceName.toUTF8String(), sentence.chains[0].phrases) + ";\n"
                 }
                 else if sentence.chains.filter({ $0.phrases.count != 1 }).isEmpty // Each chain contains exactly one phrase.
                 {
-                    return try self.generateOnlyChains(object, instance.instanceName.toUTF8String(), sentence.chains) + ";\n"
+                    return try self.generateOnlyChains(object, sentence.subject, instance.instanceName.toUTF8String(), sentence.chains) + ";\n"
                 }
                 else
                 {
-                    return self.generateChainsAndPhrases(object, instance.instanceName.toUTF8String(), sentence.chains) + ";\n"
+                    return self.generateChainsAndPhrases(object, sentence.subject, instance.instanceName.toUTF8String(), sentence.chains) + ";\n"
                 }
 
             case .`self`(_):
@@ -40,15 +40,15 @@ extension BellCompiler
                 }
                 else if sentence.chains.count == 1
                 {
-                    return try self.generatePhrases(object, "this", sentence.chains[0].phrases)
+                    return try self.generatePhrases(object, sentence.subject, "this", sentence.chains[0].phrases)
                 }
                 else if sentence.chains.filter({ $0.phrases.count != 1 }).isEmpty // Each chain contains exactly one phrase.
                 {
-                    return try self.generateOnlyChains(object, "this", sentence.chains)
+                    return try self.generateOnlyChains(object, sentence.subject, "this", sentence.chains)
                 }
                 else
                 {
-                    return self.generateChainsAndPhrases(object, "this", sentence.chains)
+                    return self.generateChainsAndPhrases(object, sentence.subject, "this", sentence.chains)
                 }
 
             case .objectLocal(var name):
@@ -67,15 +67,15 @@ extension BellCompiler
                 }
                 else if sentence.chains.count == 1
                 {
-                    return try self.generatePhrases(object, name.toUTF8String(), sentence.chains[0].phrases)
+                    return try self.generatePhrases(object, sentence.subject, name.toUTF8String(), sentence.chains[0].phrases)
                 }
                 else if sentence.chains.filter({ $0.phrases.count != 1 }).isEmpty // Each chain contains exactly one phrase.
                 {
-                    return try self.generateOnlyChains(object, name.toUTF8String(), sentence.chains)
+                    return try self.generateOnlyChains(object, sentence.subject, name.toUTF8String(), sentence.chains)
                 }
                 else
                 {
-                    return self.generateChainsAndPhrases(object, name.toUTF8String(), sentence.chains)
+                    return self.generateChainsAndPhrases(object, sentence.subject, name.toUTF8String(), sentence.chains)
                 }
 
             case .literal(let literal):
@@ -85,42 +85,60 @@ extension BellCompiler
                 }
                 else if sentence.chains.count == 1
                 {
-                    return try self.generatePhrases(object, literal.description, sentence.chains[0].phrases)
+                    return try self.generatePhrases(object, sentence.subject, literal.description, sentence.chains[0].phrases)
                 }
                 else if sentence.chains.filter({ $0.phrases.count != 1 }).isEmpty // Each chain contains exactly one phrase.
                 {
-                    return try self.generateOnlyChains(object, literal.description, sentence.chains)
+                    return try self.generateOnlyChains(object, sentence.subject, literal.description, sentence.chains)
                 }
                 else
                 {
-                    return self.generateChainsAndPhrases(object, literal.description, sentence.chains)
+                    return self.generateChainsAndPhrases(object, sentence.subject, literal.description, sentence.chains)
+                }
+
+            case .parameter(name: let name, type: _):
+                if sentence.chains.count == 0
+                {
+                    return ""
+                }
+                else if sentence.chains.count == 1
+                {
+                    return try self.generatePhrases(object, sentence.subject, name.toUTF8String(), sentence.chains[0].phrases)
+                }
+                else if sentence.chains.filter({ $0.phrases.count != 1 }).isEmpty // Each chain contains exactly one phrase.
+                {
+                    return try self.generateOnlyChains(object, sentence.subject, name.toUTF8String(), sentence.chains)
+                }
+                else
+                {
+                    return self.generateChainsAndPhrases(object, sentence.subject, name.toUTF8String(), sentence.chains)
                 }
         }
     }
 
-    public func generateOnlyChains(_ object: Object, _ instanceName: String, _ chains: [Chain]) throws -> String
+    public func generateOnlyChains(_ object: Object, _ subject: Subject, _ instanceName: String, _ chains: [Chain]) throws -> String
     {
         if instanceName == "this"
         {
-            return try "\(chains.map { try self.generateChain(object, instanceName, $0) }.joined(separator: "."));\n"
+            return try "\(chains.map { try self.generateChain(object, subject, instanceName, $0) }.joined(separator: "."));\n"
         }
         else
         {
-            return try "\(instanceName)->\(chains.map { try self.generateChain(object, instanceName, $0) }.joined(separator: "."));\n"
+            return try "\(instanceName)->\(chains.map { try self.generateChain(object, subject, instanceName, $0) }.joined(separator: "."));\n"
         }
     }
 
-    public func generateChain(_ object: Object, _ instanceName: String, _ chain: Chain) throws -> String
+    public func generateChain(_ object: Object, _ subject: Subject, _ instanceName: String, _ chain: Chain) throws -> String
     {
-        return try chain.phrases.map { try self.generatePhrase(object, instanceName, $0) }.joined(separator: "\n")
+        return try chain.phrases.map { try self.generatePhrase(object, subject, instanceName, $0) }.joined(separator: "\n")
     }
 
-    public func generatePhrase(_ object: Object, _ phrase: Phrase) throws -> String
+    public func generatePhrase(_ object: Object, _ subject: Subject, _ phrase: Phrase) throws -> String
     {
         return "\(phrase.verb.name.toUTF8String())(\(try self.generateArguments(object, phrase.arguments)));"
     }
 
-    public func generatePhrases(_ object: Object, _ instanceName: String, _ phrases: [Phrase]) throws -> String
+    public func generatePhrases(_ object: Object, _ subject: Subject, _ instanceName: String, _ phrases: [Phrase]) throws -> String
     {
         if phrases.count == 0
         {
@@ -128,19 +146,19 @@ extension BellCompiler
         }
         else if phrases.count == 1
         {
-            return try self.generatePhrase(object, instanceName, phrases[0])
+            return try self.generatePhrase(object, subject, instanceName, phrases[0])
         }
         else
         {
-            return try phrases.map { try self.generatePhrase(object, instanceName, $0) }.joined(separator: "\n")
+            return try phrases.map { try self.generatePhrase(object, subject, instanceName, $0) }.joined(separator: "\n")
         }
     }
 
-    public func generatePhrase(_ object: Object, _ instanceName: String, _ phrase: Phrase) throws -> String
+    public func generatePhrase(_ object: Object, _ subject: Subject, _ instanceName: String, _ phrase: Phrase) throws -> String
     {
         if self.isSpecializedVerb(phrase.verb)
         {
-            return try self.generateSpecializedVerb(object, instanceName, phrase)
+            return try self.generateSpecializedVerb(object, subject, instanceName, phrase)
         }
         else
         {
@@ -160,54 +178,158 @@ extension BellCompiler
         return SpecializedVerb(rawValue: verb.name.toUTF8String()) != nil
     }
 
-    public func generateSpecializedVerb(_ object: Object, _ instanceName: String, _ phrase: Phrase) throws -> String
+    public func generateSpecializedVerb(_ object: Object, _ subject: Subject, _ instanceName: String, _ phrase: Phrase) throws -> String
     {
         guard let verb = SpecializedVerb(rawValue: phrase.verb.name.toUTF8String()) else
         {
             throw BellCompilerError.unknownSpecializedVerb
         }
 
-        switch verb
+        let subjectType = object.getSubjectType(subject)
+
+        switch subjectType
         {
-            case .add:
-                return "\(instanceName) + \(try self.generateArguments(object, phrase.arguments))"
-
-            case .subtract:
-                return "\(instanceName) - \(try self.generateArguments(object, phrase.arguments))"
-
-            case .multiply:
-                return "\(instanceName) * \(try self.generateArguments(object, phrase.arguments))"
-
-            case .divide:
-                return "\(instanceName) / \(try self.generateArguments(object, phrase.arguments))"
-
-            case .rescale:
-                guard phrase.arguments.count == 4 else
+            case "#int":
+                switch verb
                 {
-                    throw BellCompilerError.badArity
+                    case .add:
+                        //return "\(instanceName) + \(try self.generateArguments(object, phrase.arguments))"
+                        return "FIXME"
+
+                    case .subtract:
+//                        return "\(instanceName) - \(try self.generateArguments(object, phrase.arguments))"
+                        return "FIXME"
+
+                    case .multiply:
+                        guard instanceName == "x" else
+                        {
+                            return "FAILED"
+                        }
+
+                        return """
+                            for(int index = 0; index < AUDIO_SAMPLE_BLOCK ; index++)
+                            {
+                                x[index] = x[index] * \(try self.generateArguments(object, phrase.arguments))
+                            }
+                        """
+
+                    case .divide:
+//                        return "\(instanceName) / \(try self.generateArguments(object, phrase.arguments))"
+                        return "FIXME"
+
+                    case .rescale:
+//                        guard phrase.arguments.count == 4 else
+//                        {
+//                            throw BellCompilerError.badArity
+//                        }
+//
+//                        let lowerStart = phrase.arguments[0]
+//                        let upperStart = phrase.arguments[1]
+//                        let lowerEnd = phrase.arguments[2]
+//                        let upperEnd = phrase.arguments[3]
+//
+//                        return "int((float)(\(instanceName) - \(lowerStart)) / (float)(\(upperStart) - \(lowerStart))) * (\(upperEnd) - \(lowerEnd)) + \(lowerEnd)"
+                        return "FIXME"
+
+                    case .normalize:
+//                        guard phrase.arguments.count == 2 else
+//                        {
+//                            throw BellCompilerError.badArity
+//                        }
+//
+//                        let lower = phrase.arguments[0]
+//                        let upper = phrase.arguments[1]
+//
+//                        return "(float)(\(instanceName) - \(lower)) / (float)(\(upper) - \(lower))"
+                        return "FIXME"
                 }
 
-                let lowerStart = phrase.arguments[0]
-                let upperStart = phrase.arguments[1]
-                let lowerEnd = phrase.arguments[2]
-                let upperEnd = phrase.arguments[3]
-
-                return "int((float)(\(instanceName) - \(lowerStart)) / (float)(\(upperStart) - \(lowerStart))) * (\(upperEnd) - \(lowerEnd)) + \(lowerEnd)"
-
-            case .normalize:
-                guard phrase.arguments.count == 2 else
+            case "int":
+                switch verb
                 {
-                    throw BellCompilerError.badArity
+                    case .add:
+                        return "\(instanceName) + \(try self.generateArguments(object, phrase.arguments))"
+
+                    case .subtract:
+                        return "\(instanceName) - \(try self.generateArguments(object, phrase.arguments))"
+
+                    case .multiply:
+                        return "\(instanceName) * \(try self.generateArguments(object, phrase.arguments))"
+
+                    case .divide:
+                        return "\(instanceName) / \(try self.generateArguments(object, phrase.arguments))"
+
+                    case .rescale:
+                        guard phrase.arguments.count == 4 else
+                        {
+                            throw BellCompilerError.badArity
+                        }
+
+                        let lowerStart = phrase.arguments[0]
+                        let upperStart = phrase.arguments[1]
+                        let lowerEnd = phrase.arguments[2]
+                        let upperEnd = phrase.arguments[3]
+
+                        return "int((float)(\(instanceName) - \(lowerStart)) / (float)(\(upperStart) - \(lowerStart))) * (\(upperEnd) - \(lowerEnd)) + \(lowerEnd)"
+
+                    case .normalize:
+                        guard phrase.arguments.count == 2 else
+                        {
+                            throw BellCompilerError.badArity
+                        }
+
+                        let lower = phrase.arguments[0]
+                        let upper = phrase.arguments[1]
+
+                        return "(float)(\(instanceName) - \(lower)) / (float)(\(upper) - \(lower))"
                 }
 
-                let lower = phrase.arguments[0]
-                let upper = phrase.arguments[1]
+            case "float":
+                switch verb
+                {
+                    case .add:
+                        return "\(instanceName) + \(try self.generateArguments(object, phrase.arguments))"
 
-                return "(float)(\(instanceName) - \(lower)) / (float)(\(upper) - \(lower))"
+                    case .subtract:
+                        return "\(instanceName) - \(try self.generateArguments(object, phrase.arguments))"
+
+                    case .multiply:
+                        return "\(instanceName) * \(try self.generateArguments(object, phrase.arguments))"
+
+                    case .divide:
+                        return "\(instanceName) / \(try self.generateArguments(object, phrase.arguments))"
+
+                    case .rescale:
+                        guard phrase.arguments.count == 4 else
+                        {
+                            throw BellCompilerError.badArity
+                        }
+
+                        let lowerStart = phrase.arguments[0]
+                        let upperStart = phrase.arguments[1]
+                        let lowerEnd = phrase.arguments[2]
+                        let upperEnd = phrase.arguments[3]
+
+                        return "int((float)(\(instanceName) - \(lowerStart)) / (float)(\(upperStart) - \(lowerStart))) * (\(upperEnd) - \(lowerEnd)) + \(lowerEnd)"
+
+                    case .normalize:
+                        guard phrase.arguments.count == 2 else
+                        {
+                            throw BellCompilerError.badArity
+                        }
+
+                        let lower = phrase.arguments[0]
+                        let upper = phrase.arguments[1]
+
+                        return "(float)(\(instanceName) - \(lower)) / (float)(\(upper) - \(lower))"
+                }
+
+            default:
+                throw BellCompilerError.unknownSubject(subjectType)
         }
     }
 
-    public func generateChainsAndPhrases(_ object: Object, _ instanceName: String, _ chains: [Chain]) -> String
+    public func generateChainsAndPhrases(_ object: Object, _ subject: Subject, _ instanceName: String, _ chains: [Chain]) -> String
     {
         return "" // FIXME
     }
@@ -267,4 +389,5 @@ public enum BellCompilerError: Error
     case unknownSpecializedVerb
     case badArity
     case couldNotFindSymbolInObject(String)
+    case unknownSubject(String)
 }
